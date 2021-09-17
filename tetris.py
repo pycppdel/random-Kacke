@@ -316,7 +316,7 @@ class Cube(Tetris_Construct):
     def rotate_left(self):
         pass
 
-class Stairs(Tetris_Construct):
+class Corner(Tetris_Construct):
 
     def __init__(self, x, y):
         super().__init__(x, y, (229, 148, 0))
@@ -325,7 +325,7 @@ class Stairs(Tetris_Construct):
     def add_blocks(self):
 
         """
-        adds all blocks in square form
+        adds all blocks in corner form
         """
         b1 = Block(self.x, self.y, blocksize, self.color)
         b2 = Block(self.x+blocksize, self.y, blocksize, self.color)
@@ -338,6 +338,27 @@ class Stairs(Tetris_Construct):
         self.angle_block = b1
         self.right_blocks = [b2, b3, b4]
         self.left_blocks = [b5]
+
+class Stairs(Tetris_Construct):
+
+    def __init__(self,x, y):
+        super().__init__(x, y, (65, 255, 110))
+        self.add_blocks()
+
+    def add_blocks(self):
+        """
+        adds blocks in stairs form
+        """
+        b1 = Block(self.x-blocksize, self.y+blocksize, blocksize, self.color)
+        b2 = Block(self.x, self.y+blocksize, blocksize, self.color)
+        b3 = Block(self.x, self.y, blocksize, self.color)
+        b4 = Block(self.x+blocksize, self.y, blocksize, self.color)
+        b5 = Block(self.x+blocksize, self.y-blocksize, blocksize, self.color)
+
+        self.blocks = [b1, b2, b3, b4, b5]
+        self.angle_block = b3
+        self.down_blocks = [b1, b2]
+        self.right_blocks = [b4, b5]
 
 
 
