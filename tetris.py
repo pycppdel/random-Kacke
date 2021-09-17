@@ -12,25 +12,31 @@ ende = False
 
 fps = 60
 
-movespeed = 10
-
 fallspeed = 10
 
 falltime = 0.02
 
 blocksize = 20
 
+movetime = 0.01
+
+movespeed = blocksize
 
 clock = pygame.time.Clock()
 
 time_between_rotate = 0.1#in seconds
+
+pygame.display.set_caption("Bugged Tetris")
+
+img = pygame.image.load("tetris.png")
+pygame.display.set_icon(img)
 
 
 
 """
 everything for gamefloor
 """
-gamefloor_x, gamefloor_y, gamefloor_width, gamefloor_height = width//8, height//16, blocksize*30, blocksize*40
+gamefloor_x, gamefloor_y, gamefloor_width, gamefloor_height = width//4, height//16, (width//2//blocksize)*blocksize, blocksize*40
 
 gamefloor_color = (128, 128, 128)
 
@@ -539,19 +545,39 @@ class Fall_Regulator:
         else:
             return False
 
+class MoveRegulator(Fall_Regulator):
+
+    def __init__(self, movt):
+        super().__init__(movt)
+
+    def can_move(self):
+        return super().can_fall()
+
 
 def hits(object, liste):
     back = False
-    lowest = object.find_lowest()
-    for el in liste:
-        for x in el.blocks:
-            statement_one = (lowest.x >= x.x and lowest.x <= x.x+blocksize)
-            statement_two = (lowest.x+blocksize >= x.x and lowest.x+blocksize <= x.x+blocksize)
-            if lowest.y+blocksize >= x.y and (statement_one or statement_two):
-                back = True
+    escape = False
+    for lowest in object.blocks:
+        for el in liste:
+            for x in el.blocks:
+                low_x, low_y = lowest.x, lowest.y
+                statement_one = (low_x >= x.x and low_x <= x.x+blocksize)
+                statement_two = (low_x+blocksize >= x.x and low_x+blocksize <= x.x+blocksize)
+                if low_y+blocksize >= x.y and (statement_one or statement_two):
+                    back = True
+                    escape = True
+                    break
+        if escape:
+            break
 
     return back
 
+def check_is_ceiling(liste):
+    back = False
+    for el in liste:
+        if el.find_highest().y <= gamefloor_y:
+            back = True
+    return back
 
 
 
@@ -565,6 +591,7 @@ gamefloor = Gamefloor(gamefloor_x, gamefloor_y, gamefloor_width, gamefloor_heigh
 
 rotreg = RotationRegulator(time_between_rotate)
 fallreg = Fall_Regulator(falltime)
+movereg = MoveRegulator(movetime)
 
 ground_objects = []
 current_object = None
@@ -592,31 +619,40 @@ while not ende:
 
 
     if current_object is not None:
-        if fallreg.can_fall():
-            current_object.move_up(fallspeed, gamefloor)
-
-
-        if pressed[pygame.K_RIGHT]:
-            current_object.move_right(movespeed, gamefloor)
-
-        if pressed[pygame.K_LEFT]:
-            current_object.move_right(-movespeed, gamefloor)
-
-        if rotreg.can_rotate():
-            if pressed[pygame.K_a]:
-                current_object.rotate_left(gamefloor)
-
-            if pressed[pygame.K_d]:
-                current_object.rotate_right(gamefloor)
 
         lowest = current_object.find_lowest()
         hitting = hits(current_object, ground_objects)
-        print(hitting)
         if lowest.y+blocksize >=gamefloor_y+gamefloor_height or hitting:
             ground_objects.append(current_object)
             current_object = None
+
+
+        if current_object is not None:
+
+            if rotreg.can_rotate():
+                if pressed[pygame.K_a]:
+                    current_object.rotate_left(gamefloor)
+
+                if pressed[pygame.K_d]:
+                    current_object.rotate_right(gamefloor)
+
+            if fallreg.can_fall():
+                current_object.move_up(fallspeed, gamefloor)
+
+
+            if movereg.can_move():
+                if pressed[pygame.K_RIGHT]:
+                    current_object.move_right(movespeed, gamefloor)
+
+                if pressed[pygame.K_LEFT]:
+                    current_object.move_right(-movespeed, gamefloor)
     else:
         current_object = give_random_block_at_random_location()
+
+    if pressed[pygame.K_p]:
+        ende = True
+
+    ende = check_is_ceiling(ground_objects)
 
 
 
