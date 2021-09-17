@@ -107,10 +107,29 @@ class Tetris_Construct(ABC):
 
 
 
-    def rotate_left(self):
+    def rotate_left(self, gf):
         """
         rotates all inner blocks around origin block to right
         """
+
+        lowest = self.find_lowest()
+        if (lowest.x-(lowest.y-self.angle_block.y + (lowest.x-self.angle_block.x))) <= gf.x:
+            return
+
+        highest = self.find_highest()
+        if (highest.x + ((self.angle_block.y-highest.y) - (self.angle_block.x-highest.x))) >= gf.x+gf.width:
+            return
+
+        leftest = self.find_leftest()
+
+        if (leftest.y - (self.angle_block.x-leftest.x) + (leftest.y-self.angle_block.y)) < gf.y-2*blocksize:
+            return
+
+        rightest = self.find_rightest()
+
+        if (rightest.y + (rightest.x-self.angle_block.x) + (self.angle_block.y-rightest.y)) >= gf.y+gf.height-blocksize:
+            return
+
         for el in self.down_blocks:
             xexpression = (el.y-self.angle_block.y + (el.x-self.angle_block.x))
             yexpression = (el.y-self.angle_block.y -(el.x-self.angle_block.x))
@@ -146,10 +165,27 @@ class Tetris_Construct(ABC):
         #getting x for the mostleft block
         self.find_new_coords()
 
-    def rotate_right(self):
+    def rotate_right(self, gf):
         """
         rotates all inner blocks around origin block to right
         """
+
+        lowest = self.find_lowest()
+        if (lowest.x - ((lowest.x-self.angle_block.x) - (lowest.y-self.angle_block.y))) >= gf.x+gf.width:
+            return
+
+        highest = self.find_highest()
+        if (highest.x - ((self.angle_block.y-highest.y - (self.angle_block.x-highest.x)))) <= gf.x:
+            return
+
+        rightest = self.find_rightest()
+        if (rightest.y - (((rightest.x-self.angle_block.x)+(rightest.y-self.angle_block.y)))) <= gf.y:
+            return
+
+        leftest = self.find_leftest()
+        if (leftest.y - (( (leftest.x-self.angle_block.x) + (leftest.y-self.angle_block.y)))) >= gf.y+gf.height:
+            return
+
         for el in self.down_blocks:
             xexpression = ((el.x-self.angle_block.x) - (el.y-self.angle_block.y) )
             yexpression = ( (el.x-self.angle_block.x) + (el.y-self.angle_block.y))
@@ -465,7 +501,7 @@ gamefloor = Gamefloor(gamefloor_x, gamefloor_y, gamefloor_width, gamefloor_heigh
 rotreg = RotationRegulator(time_between_rotate)
 
 ground_blocks = []
-current_object = Stairs(gamefloor_x+100, gamefloor_y+100)
+current_object = Long(gamefloor_x+100, gamefloor_y+100)
 
 
 
@@ -503,10 +539,10 @@ while not ende:
 
         if rotreg.can_rotate():
             if pressed[pygame.K_a]:
-                current_object.rotate_left()
+                current_object.rotate_left(gamefloor)
 
             if pressed[pygame.K_d]:
-                current_object.rotate_right()
+                current_object.rotate_right(gamefloor)
 
 
 
