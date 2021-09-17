@@ -544,10 +544,12 @@ def hits(object, liste):
     back = False
     lowest = object.find_lowest()
     for el in liste:
-        for x in liste.blocks:
-            statement_one = 
-            if lowest.y+blocksize >= x.y and statement_one and statement_two:
+        for x in el.blocks:
+            statement_one = (lowest.x >= x.x and lowest.x <= x.x+blocksize)
+            statement_two = (lowest.x+blocksize >= x.x and lowest.x+blocksize <= x.x+blocksize)
+            if lowest.y+blocksize >= x.y and (statement_one or statement_two):
                 back = True
+
     return back
 
 
