@@ -20,6 +20,12 @@ clock = pygame.time.Clock()
 
 time_between_rotate = 0.1#in seconds
 
+"""
+everything for gamefloor
+"""
+gamefloor_x, gamefloor_y, gamefloor_width, gamefloor_height = width//8, height//16, blocksize*30, blocksize*40
+
+gamefloor_color = (128, 128, 128)
 
 
 class PhysicObject(ABC):
@@ -222,24 +228,84 @@ class Tetris_Construct(ABC):
         for el in self.blocks:
             el.draw(screen)
 
-    def move_up(self, speed):
-        """
-
-        moves up the speed in block direction
+    def find_rightest(self):
 
         """
-
+        finds rightest value of all blocks
+        """
+        val = 0
+        element = None
         for el in self.blocks:
-            el.y += speed
+            if el.x >= val:
+                element = el
+                val = el.x
+        return element
 
-    def move_right(self, speed):
+    def find_leftest(self):
+
+        """
+        finds mostleft block
+        """
+        val = 10000
+        element = None
+        for el in self.blocks:
+            if el.x <= val:
+                element = el
+                val = el.x
+        return element
+
+    def find_highest(self):
+        """
+        finds hgihest block in structure
+        """
+        val = 10000
+        element = None
+        for el in self.blocks:
+            if el.y <= val:
+                val = el.y
+                element = el
+        return element
+
+    def find_lowest(self):
+        """
+        finds lowest block
+        """
+        val = 0
+        element = None
+        for el in self.blocks:
+            if el.y > val:
+                val = el.y
+                element = el
+        return element
+
+
+    def move_up(self, speed, gf):
+        """
+
+        moves up the speed in block direction gf = gamefloor
+
+        """
+
+        highest = self.find_highest()
+        lowest = self.find_lowest()
+
+        if (speed <= 0 and not highest.y <= gf.y) or (speed >= 0 and not lowest.y+blocksize >= gf.y+gf.height):
+            for el in self.blocks:
+                el.y += speed
+
+    def move_right(self, speed, gf):
         """
 
         moves all blocks right
 
+        gf = gamefloor
+
         """
-        for el in self.blocks:
-            el.x += speed
+        rightest = self.find_rightest()
+        leftest = self.find_leftest()
+        if (speed <= 0 and not leftest.x <= gf.x) or (speed >= 0 and not rightest.x+blocksize >= gf.x+gf.width):
+            for el in self.blocks:
+                el.x += speed
 
 
 """
@@ -363,17 +429,6 @@ class Stairs(Tetris_Construct):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 class Gamefloor:
 
     def __init__(self, x, y, width, height, color):
@@ -388,16 +443,29 @@ class Gamefloor:
         pygame.draw.line(screen, self.color, (self.x, self.y), (self.x, self.y+self.height))
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 """
 Making all objects
 """
 
-gamefloor = Gamefloor(width//4-height//16, height//40, width//2,  height-2*(height//40), (128, 128, 128))
+gamefloor = Gamefloor(gamefloor_x, gamefloor_y, gamefloor_width, gamefloor_height, gamefloor_color)
 
 rotreg = RotationRegulator(time_between_rotate)
 
 ground_blocks = []
-current_object = Stairs(100, 100)
+current_object = Stairs(gamefloor_x+100, gamefloor_y+100)
 
 
 
@@ -422,16 +490,16 @@ while not ende:
 
     if current_object is not None:
         if pressed[pygame.K_UP]:
-            current_object.move_up(-movespeed)
+            current_object.move_up(-movespeed, gamefloor)
 
         if pressed[pygame.K_DOWN]:
-            current_object.move_up(movespeed)
+            current_object.move_up(movespeed, gamefloor)
 
         if pressed[pygame.K_RIGHT]:
-            current_object.move_right(movespeed)
+            current_object.move_right(movespeed, gamefloor)
 
         if pressed[pygame.K_LEFT]:
-            current_object.move_right(-movespeed)
+            current_object.move_right(-movespeed, gamefloor)
 
         if rotreg.can_rotate():
             if pressed[pygame.K_a]:
