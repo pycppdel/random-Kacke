@@ -164,7 +164,7 @@ class Tetris_Construct(ABC):
 
         for el in self.right_blocks:
             xexpression = (el.x-self.angle_block.x - (el.y - self.angle_block.y))
-            yexpression = ((el.x-self.angle_block.x))
+            yexpression = ((el.x-self.angle_block.x)+(el.y-self.angle_block.y))
             el.x  -= xexpression
             el.y += -yexpression
 
