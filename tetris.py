@@ -2,6 +2,7 @@ import pygame
 from abc import ABC, abstractmethod
 import math
 import time
+import random
 
 width, height = 1200, 900
 
@@ -13,12 +14,18 @@ fps = 60
 
 movespeed = 10
 
+fallspeed = 10
+
+falltime = 0.02
+
 blocksize = 20
 
 
 clock = pygame.time.Clock()
 
 time_between_rotate = 0.1#in seconds
+
+
 
 """
 everything for gamefloor
@@ -54,6 +61,7 @@ class Block(PhysicObject):
     def __init__(self, x, y, blocksize, color):
         self.x, self.y = x, y
         self.blocksize = blocksize
+        self.width, self.height = self.blocksize, self.blocksize
         self.color = color
         self.hitbox = Hitbox(self.x, self.y, self.blocksize, self.blocksize)
 
@@ -343,6 +351,20 @@ class Tetris_Construct(ABC):
             for el in self.blocks:
                 el.x += speed
 
+    """
+    setter methods
+    """
+    def setx(self, val):
+        self.x = val
+        for el in self.blocks:
+            el.x = val+(el.x-self.x)
+        self.x = val
+
+    def sety(self, val):
+        for el in self.blocks:
+            el.y = val+(el.y-self.y)
+        self.y = val
+
 
 """
 for rotation regulation
@@ -412,10 +434,10 @@ class Cube(Tetris_Construct):
         self.blocks = [b1, b2, b3, b4]
         self.angle_block = b1
 
-    def rotate_left(self):
+    def rotate_left(self, a):
         pass
 
-    def rotate_left(self):
+    def rotate_left(self, a):
         pass
 
 class Corner(Tetris_Construct):
@@ -479,13 +501,54 @@ class Gamefloor:
         pygame.draw.line(screen, self.color, (self.x, self.y), (self.x, self.y+self.height))
 
 
+"""
+defining all blcoks variable
+"""
+all_blocks = [Long, Cube, Stairs, Corner]
+
+def give_random_block_at_random_location():
+    """
+    gives back a random block inside gamefloor to play
+    """
+    random_x = random.randrange(gamefloor_x, gamefloor_x+gamefloor_width-blocksize)
+    random_block = random.choice(all_blocks)
+
+    #making block at random location
+    back_block = random_block(random_x, gamefloor.y)
+    back_block.sety(back_block.y+back_block.angle_block.y-back_block.find_highest().y)
+    return back_block
 
 
 
+class Fall_Regulator:
+
+    """
+    class for regulating the fall
+    """
+    def __init__(self, fat):
+        self.falltime = fat
+        self.last = time.perf_counter()
+        self.curr = time.perf_counter()
+
+    def can_fall(self):
+
+        self.curr = time.perf_counter()
+        if self.curr-self.last >= self.falltime:
+            self.last = self.curr
+            return True
+        else:
+            return False
 
 
-
-
+def hits(object, liste):
+    back = False
+    lowest = object.find_lowest()
+    for el in liste:
+        for x in liste.blocks:
+            statement_one = 
+            if lowest.y+blocksize >= x.y and statement_one and statement_two:
+                back = True
+    return back
 
 
 
@@ -499,16 +562,17 @@ Making all objects
 gamefloor = Gamefloor(gamefloor_x, gamefloor_y, gamefloor_width, gamefloor_height, gamefloor_color)
 
 rotreg = RotationRegulator(time_between_rotate)
+fallreg = Fall_Regulator(falltime)
 
-ground_blocks = []
-current_object = Long(gamefloor_x+100, gamefloor_y+100)
+ground_objects = []
+current_object = None
 
 
 
 def redraw():
     screen.fill((0, 0, 0))
     gamefloor.draw(screen)
-    for el in ground_blocks:
+    for el in ground_objects:
         el.draw(screen)
     if current_object is not None:
         current_object.draw(screen)
@@ -524,12 +588,11 @@ while not ende:
 
     pressed = pygame.key.get_pressed()
 
-    if current_object is not None:
-        if pressed[pygame.K_UP]:
-            current_object.move_up(-movespeed, gamefloor)
 
-        if pressed[pygame.K_DOWN]:
-            current_object.move_up(movespeed, gamefloor)
+    if current_object is not None:
+        if fallreg.can_fall():
+            current_object.move_up(fallspeed, gamefloor)
+
 
         if pressed[pygame.K_RIGHT]:
             current_object.move_right(movespeed, gamefloor)
@@ -543,6 +606,15 @@ while not ende:
 
             if pressed[pygame.K_d]:
                 current_object.rotate_right(gamefloor)
+
+        lowest = current_object.find_lowest()
+        hitting = hits(current_object, ground_objects)
+        print(hitting)
+        if lowest.y+blocksize >=gamefloor_y+gamefloor_height or hitting:
+            ground_objects.append(current_object)
+            current_object = None
+    else:
+        current_object = give_random_block_at_random_location()
 
 
 
