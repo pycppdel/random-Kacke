@@ -20,6 +20,8 @@ blocksize = 20
 
 movetime = 0.01
 
+penice_chance = 20
+
 movespeed = blocksize
 
 clock = pygame.time.Clock()
@@ -40,6 +42,8 @@ gamefloor_x, gamefloor_y, gamefloor_width, gamefloor_height = width//4, height//
 
 gamefloor_color = (128, 128, 128)
 
+all_choice_x = [el for el in range(gamefloor_x, gamefloor_x+gamefloor_width, blocksize)]
+
 
 class PhysicObject(ABC):
     pass
@@ -56,20 +60,21 @@ class Hitbox:
         checks if colliding with other hitbox
         """
         statements = []
-        statements.append((self.x >= other.x and self.x <= other.x+other.width and self.y >= other.y and self.y <= other.y+other.height))
+        statements.append((self.x >= other.x and self.x+self.width <= other.x+other.width and self.y >= other.y and self.y <= other.y+other.height))
         statements.append((self.x+self.width >= other.x and self.x+self.width <= other.x+other.width and self.y >= other.y and self.y <= other.y+other.height))
         statements.append((self.x >= other.x and self.x <= other.x+other.width and self.y+self.height >= other.y and self.y+self.height <= other.y+other.height))
         statements.append((self.x+self.width >= other.x and self.x+self.width <= other.x+other.width and self.y+self.height >= other.y and self.y+self.height <= other.y+other.height))
+
         return any(statements)
 
 
 class Block(PhysicObject):
     def __init__(self, x, y, blocksize, color):
-        self.x, self.y = x, y
+        self.__x, self.__y = x, y
         self.blocksize = blocksize
         self.width, self.height = self.blocksize, self.blocksize
         self.color = color
-        self.hitbox = Hitbox(self.x, self.y, self.blocksize, self.blocksize)
+        self.hitbox = Hitbox(self.__x, self.__y, self.blocksize, self.blocksize)
 
     def draw(self, screen):
         pygame.draw.rect(screen, self.color, (self.x, self.y, self.blocksize, self.blocksize))
@@ -87,6 +92,24 @@ class Block(PhysicObject):
 
     def move_up(self, val):
         self.set_y(self.y+val)
+
+    @property
+    def x(self):
+        return self.__x
+
+    @property
+    def y(self):
+        return self.__y
+
+    @x.setter
+    def x(self, val):
+        self.__x = val
+        self.hitbox.x = val
+
+    @y.setter
+    def y(self, val):
+        self.__y = val
+        self.hitbox.y = val
 
 class Tetris_Construct(ABC):
 
@@ -490,6 +513,27 @@ class Stairs(Tetris_Construct):
         self.down_blocks = [b1, b2]
         self.right_blocks = [b4, b5]
 
+class Penice(Tetris_Construct):
+
+    def __init__(self, x, y):
+        super().__init__(x, y, (239, 87, 235))
+        self.add_blocks()
+
+    def add_blocks(self):
+
+        b1 = Block(self.x-blocksize, self.y, blocksize, self.color)
+        b2 = Block(self.x, self.y, blocksize, self.color)
+        b3 = Block(self.x+blocksize, self.y, blocksize, self.color)
+        b4 = Block(self.x, self.y-blocksize, blocksize, self.color)
+        b5 = Block(self.x, self.y-2*blocksize, blocksize, self.color)
+        b6 = Block(self.x, self.y-3*blocksize, blocksize, self.color)
+
+        self.blocks = [b1, b2, b3, b4, b5, b6]
+        self.angle_block = b2
+        self.left_blocks = [b1]
+        self.right_blocks = [b3]
+        self.up_blocks = [b4, b5, b6]
+
 
 
 
@@ -516,8 +560,9 @@ def give_random_block_at_random_location():
     """
     gives back a random block inside gamefloor to play
     """
-    random_x = random.randrange(gamefloor_x, gamefloor_x+gamefloor_width-blocksize)
-    random_block = random.choice(all_blocks)
+    penice_gotten = random.randrange(penice_chance)
+    random_x = random.choice(all_choice_x)
+    random_block = (random.choice(all_blocks) if not (penice_gotten==1) else Penice)
 
     #making block at random location
     back_block = random_block(random_x, gamefloor.y)
@@ -554,12 +599,13 @@ class MoveRegulator(Fall_Regulator):
         return super().can_fall()
 
 
-def hits(object, liste):
+def hits(object, liste, x_mod=0, y_mod=0):
     back = False
     escape = False
     for lowest in object.blocks:
         for el in liste:
             for x in el.blocks:
+                """
                 low_x, low_y = lowest.x, lowest.y
                 statement_one = (low_x >= x.x and low_x <= x.x+blocksize)
                 statement_two = (low_x+blocksize >= x.x and low_x+blocksize <= x.x+blocksize)
@@ -567,6 +613,18 @@ def hits(object, liste):
                     back = True
                     escape = True
                     break
+                """
+                save_x, save_y = lowest.hitbox.x, lowest.hitbox.y
+                lowest.hitbox.x = save_x+x_mod
+                lowest.hitbox.y = save_y+y_mod
+                if x.hitbox.is_colliding(lowest):
+                    lowest.hitbox.x = save_x
+                    lowest.hitbox.y = save_y
+                    escape = True
+                    back = True
+                    break
+                lowest.hitbox.x = save_x
+                lowest.hitbox.y = save_y
         if escape:
             break
 
@@ -642,10 +700,16 @@ while not ende:
 
             if movereg.can_move():
                 if pressed[pygame.K_RIGHT]:
-                    current_object.move_right(movespeed, gamefloor)
+                    if not hits(current_object, ground_objects, movespeed):
+                        current_object.move_right(movespeed, gamefloor)
+                    else:
+                        current_object = None
 
-                if pressed[pygame.K_LEFT]:
-                    current_object.move_right(-movespeed, gamefloor)
+                elif pressed[pygame.K_LEFT]:
+                    if not hits(current_object, ground_objects, -movespeed):
+                        current_object.move_right(-movespeed, gamefloor)
+                    else:
+                        current_object = None
     else:
         current_object = give_random_block_at_random_location()
 
