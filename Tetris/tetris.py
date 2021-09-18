@@ -703,12 +703,14 @@ while not ende:
                     if not hits(current_object, ground_objects, movespeed):
                         current_object.move_right(movespeed, gamefloor)
                     else:
+                        gorund_objects.append(current_object)
                         current_object = None
 
                 elif pressed[pygame.K_LEFT]:
                     if not hits(current_object, ground_objects, -movespeed):
                         current_object.move_right(-movespeed, gamefloor)
                     else:
+                        ground_objects.append(current_object)
                         current_object = None
     else:
         current_object = give_random_block_at_random_location()
