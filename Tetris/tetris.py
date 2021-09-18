@@ -516,7 +516,7 @@ class Stairs(Tetris_Construct):
 class Penice(Tetris_Construct):
 
     def __init__(self, x, y):
-        super().__init__(x, y, (239, 87, 235))
+        super().__init__(x, y, (0, 206, 209))
         self.add_blocks()
 
     def add_blocks(self):
@@ -635,6 +635,7 @@ def check_is_ceiling(liste):
     for el in liste:
         if el.find_highest().y <= gamefloor_y:
             back = True
+
     return back
 
 
