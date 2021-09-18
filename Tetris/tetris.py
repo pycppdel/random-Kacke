@@ -20,7 +20,7 @@ blocksize = 20
 
 movetime = 0.01
 
-penice_chance = 20
+penice_chance = 50
 
 movespeed = blocksize
 
