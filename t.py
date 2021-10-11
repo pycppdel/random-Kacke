@@ -1,15 +1,7 @@
-d = {1: "Schweif", 2: "Greif", 3: "BAM"}
-Kopie = d.copy()
-d.clear()
-Item = Kopie.items()
-print(Item)
-for Key in Kopie.values():
-    print(Key)
-Kopie.pop(1)
-print(Kopie)
-Kopie.setdefault(1, "Uff")
-print(Kopie)
-Kopie.update({9: "Phönix"})
-print(Kopie)
-a = dict.fromkeys(Kopie, "KJflakfjlkfj")
-print(a)
+l = [1, 2, 3, 4]
+def gerenator():
+    for el in l:
+        p = []
+
+i = [(a, b) for a in l for b in l]
+print(i)
